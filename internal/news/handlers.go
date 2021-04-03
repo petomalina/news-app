@@ -3,6 +3,7 @@ package news
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"sort"
 )
 
 func (s *Server) handleHealth() gin.HandlerFunc {
@@ -38,6 +39,14 @@ func (s *Server) handleFetch() gin.HandlerFunc {
 				"error": "could not fetch articles for the given provider",
 			})
 			return
+		}
+
+		// support descending order of news in case the app doesn't want
+		// to render them based on relevance
+		if c.Query("sort") == "desc" {
+			sort.Slice(articles, func(i, j int) bool {
+				return articles[i].PublishedParsed.After(*articles[j].PublishedParsed)
+			})
 		}
 
 		c.JSON(http.StatusOK, articles)
