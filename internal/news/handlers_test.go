@@ -32,6 +32,40 @@ func (s *ServerHandlersSuite) TestHandleHealth() {
 	s.Equal("ok", jsonRes["status"])
 }
 
+type handleSourceInfoCandidate struct {
+	serverOpts      []ServerOpt
+	expectedSources []string
+}
+
+func (s *ServerHandlersSuite) TestHandleSourceInfo() {
+	candidates := []handleSourceInfoCandidate{
+		{
+			serverOpts: []ServerOpt{
+				WithProvider("mock", feed.NewMockProvider(nil, nil)),
+			},
+		},
+	}
+
+	for _, c := range candidates {
+		s.Run(
+			"", func() {
+				newsServer := NewServer(zaptest.NewLogger(s.T()), c.serverOpts...)
+				srv := httptest.NewServer(newsServer.Routes())
+				defer srv.Close()
+
+				res, err := http.Get(srv.URL + "/sources")
+				s.NoError(err)
+				s.NotNil(res)
+				defer s.NoError(res.Body.Close())
+
+				var sources []string
+				err = json.NewDecoder(res.Body).Decode(&sources)
+				s.NoError(err)
+			},
+		)
+	}
+}
+
 type handleFetchCandidate struct {
 	serverOpts       []ServerOpt
 	queryString      string
@@ -44,6 +78,7 @@ func (s *ServerHandlersSuite) TestHandleFetch() {
 		{
 			serverOpts: []ServerOpt{
 				WithProvider(
+					"mock",
 					feed.NewMockProvider(
 						[]*feed.Article{
 							{
@@ -55,6 +90,7 @@ func (s *ServerHandlersSuite) TestHandleFetch() {
 					),
 				),
 			},
+			queryString:    "?provider=mock",
 			expectedStatus: http.StatusOK,
 			expectedArticles: []*feed.Article{
 				{

@@ -11,23 +11,24 @@ import (
 // Server handles requests to the News API
 type Server struct {
 	log       *zap.Logger
-	providers []feed.Provider
+	providers map[string]feed.Provider
 }
 
 // ServerOpt is a type used to configure a Server instance
 type ServerOpt = func(s *Server)
 
 // WithProvider registers a new feed.Provider to the Server
-func WithProvider(p feed.Provider) ServerOpt {
+func WithProvider(name string, p feed.Provider) ServerOpt {
 	return func(s *Server) {
-		s.providers = append(s.providers, p)
+		s.providers[name] = p
 	}
 }
 
 // NewServer instantiates a new Server instance for the News API
 func NewServer(log *zap.Logger, opts ...ServerOpt) *Server {
 	srv := &Server{
-		log: log,
+		log:       log,
+		providers: map[string]feed.Provider{},
 	}
 
 	for _, opt := range opts {
@@ -46,6 +47,7 @@ func (s *Server) Routes() http.Handler {
 
 	r := gin.Default()
 	r.GET("/health", s.handleHealth())
+	r.GET("/sources", s.handleSourceInfo())
 	r.GET("/fetch", s.handleFetch())
 
 	s.handleFetch()
