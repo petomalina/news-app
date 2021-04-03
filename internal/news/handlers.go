@@ -2,6 +2,7 @@ package news
 
 import (
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func (s *Server) handleHealth() gin.HandlerFunc {
@@ -12,5 +13,6 @@ func (s *Server) handleHealth() gin.HandlerFunc {
 
 func (s *Server) handleFetch() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		c.Status(http.StatusOK)
 	}
 }
