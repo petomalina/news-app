@@ -35,7 +35,6 @@ func main() {
 
 	newsServer := news.NewServer(
 		logger.With(zap.String("service", "news")),
-		[]string{},
 	)
 
 	srv := http.Server{

@@ -2,6 +2,7 @@ package news
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/petomalina/news-app/internal/news/feed"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -9,16 +10,31 @@ import (
 
 // Server handles requests to the News API
 type Server struct {
-	log     *zap.Logger
-	sources []string
+	log       *zap.Logger
+	providers []feed.Provider
+}
+
+// ServerOpt is a type used to configure a Server instance
+type ServerOpt = func(s *Server)
+
+// WithProvider registers a new feed.Provider to the Server
+func WithProvider(p feed.Provider) ServerOpt {
+	return func(s *Server) {
+		s.providers = append(s.providers, p)
+	}
 }
 
 // NewServer instantiates a new Server instance for the News API
-func NewServer(log *zap.Logger, sources []string) *Server {
-	return &Server{
-		log:     log,
-		sources: sources,
+func NewServer(log *zap.Logger, opts ...ServerOpt) *Server {
+	srv := &Server{
+		log: log,
 	}
+
+	for _, opt := range opts {
+		opt(srv)
+	}
+
+	return srv
 }
 
 // Routes returns a mux.Router with registered routes

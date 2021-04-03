@@ -2,6 +2,7 @@ package news
 
 import (
 	"encoding/json"
+	"github.com/petomalina/news-app/internal/news/feed"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap/zaptest"
 	"net/http"
@@ -14,7 +15,8 @@ type ServerHandlersSuite struct {
 }
 
 func (s *ServerHandlersSuite) TestHandleHealth() {
-	srv := makeNewsServer(s.T())
+	newsServer := NewServer(zaptest.NewLogger(s.T()))
+	srv := httptest.NewServer(newsServer.Routes())
 	defer srv.Close()
 
 	res, err := http.Get(srv.URL + "/health")
@@ -31,34 +33,60 @@ func (s *ServerHandlersSuite) TestHandleHealth() {
 }
 
 type handleFetchCandidate struct {
-	queryString    string
-	expectedStatus int
+	serverOpts       []ServerOpt
+	queryString      string
+	expectedStatus   int
+	expectedArticles []*feed.Article
 }
 
 func (s *ServerHandlersSuite) TestHandleFetch() {
 	candidates := []handleFetchCandidate{
 		{
+			serverOpts: []ServerOpt{
+				WithProvider(
+					feed.NewMockProvider(
+						[]*feed.Article{
+							{
+								Title:   "Hello World",
+								Content: "This is a test article",
+							},
+						},
+						nil,
+					),
+				),
+			},
 			expectedStatus: http.StatusOK,
+			expectedArticles: []*feed.Article{
+				{
+					Title:   "Hello World",
+					Content: "This is a test article",
+				},
+			},
 		},
 	}
 	for _, c := range candidates {
-		s.Run("", func() {
-			srv := makeNewsServer(s.T())
-			defer srv.Close()
+		s.Run(
+			"", func() {
+				newsServer := NewServer(zaptest.NewLogger(s.T()), c.serverOpts...)
+				srv := httptest.NewServer(newsServer.Routes())
+				defer srv.Close()
 
-			res, err := http.Get(srv.URL + "/fetch" + c.queryString)
-			s.NoError(err)
-			s.NotNil(res)
-			s.Equal(c.expectedStatus, res.StatusCode)
-		})
+				res, err := http.Get(srv.URL + "/fetch" + c.queryString)
+				s.NoError(err)
+				s.NotNil(res)
+				defer s.NoError(res.Body.Close())
+				s.Equal(c.expectedStatus, res.StatusCode)
+
+				var articles []*feed.Article
+				err = json.NewDecoder(res.Body).Decode(&articles)
+				s.NoError(err)
+
+				s.ElementsMatch(c.expectedArticles, articles)
+			},
+		)
 	}
 }
 
 func TestServerHandlerSuite(t *testing.T) {
 	suite.Run(t, &ServerHandlersSuite{})
-}
-
-func makeNewsServer(t *testing.T) *httptest.Server {
-	newsServer := NewServer(zaptest.NewLogger(t), []string{})
-	return httptest.NewServer(newsServer.Routes())
 }
