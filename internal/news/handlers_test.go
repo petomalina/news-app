@@ -33,16 +33,17 @@ func (s *ServerHandlersSuite) TestHandleHealth() {
 }
 
 type handleSourceInfoCandidate struct {
-	serverOpts      []ServerOpt
-	expectedSources []string
+	serverOpts        []ServerOpt
+	expectedProviders []string
 }
 
-func (s *ServerHandlersSuite) TestHandleSourceInfo() {
+func (s *ServerHandlersSuite) TestHandleGetProviders() {
 	candidates := []handleSourceInfoCandidate{
 		{
 			serverOpts: []ServerOpt{
 				WithProvider("mock", feed.NewMockProvider(nil, nil)),
 			},
+			expectedProviders: []string{"mock"},
 		},
 	}
 
@@ -53,10 +54,12 @@ func (s *ServerHandlersSuite) TestHandleSourceInfo() {
 				srv := httptest.NewServer(newsServer.Routes())
 				defer srv.Close()
 
-				res, err := http.Get(srv.URL + "/sources")
+				res, err := http.Get(srv.URL + "/providers")
 				s.NoError(err)
 				s.NotNil(res)
-				defer s.NoError(res.Body.Close())
+				defer func() {
+					s.NoError(res.Body.Close())
+				}()
 
 				var sources []string
 				err = json.NewDecoder(res.Body).Decode(&sources)
@@ -90,7 +93,7 @@ func (s *ServerHandlersSuite) TestHandleFetch() {
 					),
 				),
 			},
-			queryString:    "?provider=mock",
+			queryString:    "?p=mock",
 			expectedStatus: http.StatusOK,
 			expectedArticles: []*feed.Article{
 				{
@@ -110,7 +113,9 @@ func (s *ServerHandlersSuite) TestHandleFetch() {
 				res, err := http.Get(srv.URL + "/fetch" + c.queryString)
 				s.NoError(err)
 				s.NotNil(res)
-				defer s.NoError(res.Body.Close())
+				defer func() {
+					s.NoError(res.Body.Close())
+				}()
 				s.Equal(c.expectedStatus, res.StatusCode)
 
 				var articles []*feed.Article

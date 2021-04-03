@@ -15,6 +15,6 @@ func NewMockProvider(articles []*Article, err error) *MockProvider {
 }
 
 // Fetch returns the mocked articles provided in the constructor
-func (p *MockProvider) Fetch() ([]*Article, error) {
+func (p *MockProvider) Fetch(_ string) ([]*Article, error) {
 	return p.articles, p.err
 }

@@ -1,5 +1,5 @@
 package feed
 
 type Provider interface {
-	Fetch() ([]*Article, error)
+	Fetch(category string) ([]*Article, error)
 }

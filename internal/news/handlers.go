@@ -11,15 +11,19 @@ func (s *Server) handleHealth() gin.HandlerFunc {
 	}
 }
 
-func (s *Server) handleSourceInfo() gin.HandlerFunc {
+func (s *Server) handleGetProviders() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Status(http.StatusOK)
+		var names []string
+		for name, _ := range s.providers {
+			names = append(names, name)
+		}
+		c.JSON(200, names)
 	}
 }
 
 func (s *Server) handleFetch() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		provider, ok := s.providers[c.Query("provider")]
+		provider, ok := s.providers[c.Query("p")]
 		if !ok {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "requested provider could not be found",
@@ -27,7 +31,8 @@ func (s *Server) handleFetch() gin.HandlerFunc {
 			return
 		}
 
-		articles, err := provider.Fetch()
+		category := c.Query("c")
+		articles, err := provider.Fetch(category)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "could not fetch articles for the given provider",

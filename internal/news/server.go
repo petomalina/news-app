@@ -47,7 +47,7 @@ func (s *Server) Routes() http.Handler {
 
 	r := gin.Default()
 	r.GET("/health", s.handleHealth())
-	r.GET("/sources", s.handleSourceInfo())
+	r.GET("/providers", s.handleGetProviders())
 	r.GET("/fetch", s.handleFetch())
 
 	s.handleFetch()
