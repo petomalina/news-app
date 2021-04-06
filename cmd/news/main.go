@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/petomalina/news-app/internal/news"
+	"github.com/petomalina/news-app/internal/news/feed"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
 	"net"
@@ -33,8 +34,15 @@ func main() {
 		logger.Fatal("envconfig.Process", zap.Error(err))
 	}
 
+	var providers []news.ServerOpt
+	for name, fmtUrl := range conf.Providers {
+		providers = append(providers, news.WithProvider(name, feed.NewRSSProvider(fmtUrl)))
+		logger.Info("Registering provider", zap.String("provider", name))
+	}
+
 	newsServer := news.NewServer(
 		logger.With(zap.String("service", "news")),
+		providers...,
 	)
 
 	srv := http.Server{
