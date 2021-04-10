@@ -1,5 +1,7 @@
 package feed
 
+import "context"
+
 // MockProvider provides articles that were given to it directly
 type MockProvider struct {
 	articles []*Article
@@ -15,6 +17,6 @@ func NewMockProvider(articles []*Article, err error) *MockProvider {
 }
 
 // Fetch returns the mocked articles provided in the constructor
-func (p *MockProvider) Fetch(_ string) ([]*Article, error) {
+func (p *MockProvider) Fetch(_ context.Context, _ string) ([]*Article, error) {
 	return p.articles, p.err
 }

@@ -1,6 +1,7 @@
 package feed
 
 import (
+	"context"
 	"fmt"
 	"github.com/mmcdole/gofeed"
 )
@@ -20,8 +21,8 @@ func NewRSSProvider(sourceFmt string) *RSSProvider {
 }
 
 // Fetch parses the given sourceFmt and returns its articles
-func (p *RSSProvider) Fetch(category string) ([]*Article, error) {
-	feed, err := gofeed.NewParser().ParseURL(fmt.Sprintf(p.sourceFmt, category))
+func (p *RSSProvider) Fetch(ctx context.Context, category string) ([]*Article, error) {
+	feed, err := gofeed.NewParser().ParseURLWithContext(fmt.Sprintf(p.sourceFmt, category), ctx)
 	if err != nil {
 		return nil, err
 	}

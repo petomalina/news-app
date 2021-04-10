@@ -33,7 +33,7 @@ func (s *Server) handleFetch() gin.HandlerFunc {
 		}
 
 		category := c.Query("c")
-		articles, err := provider.Fetch(category)
+		articles, err := provider.Fetch(c.Request.Context(), category)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "could not fetch articles for the given provider",
