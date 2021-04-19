@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: news-api
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: news-api
+  template:
+    metadata:
+      labels:
+        app: news-api
+    spec:
+      containers:
+        - image: europe-west3-docker.pkg.dev/jazra-sh/news-app/main
+          name: server
+          ports:
+            - containerPort: 80
+          env:
+            - name: PORT
+              value: 80
